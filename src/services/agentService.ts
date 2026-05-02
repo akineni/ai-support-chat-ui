@@ -64,4 +64,9 @@ export const agentService = {
       // Silently fail — typing is non-critical
     }
   },
+
+  async getUnreadCounts(): Promise<Record<string, number>> {
+    const response = await axiosInstance.get('/agent/conversations/unread-counts');
+    return response.data.data;
+  },
 };

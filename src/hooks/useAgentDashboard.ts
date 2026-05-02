@@ -20,14 +20,26 @@ export function useAgentDashboard() {
   const [unreadCounts, setUnreadCounts]             = useState<Record<string, number>>({});
   const { toasts, toast, removeToast }              = useToast();
 
-  const activeUuidRef   = useRef<string | null>(null);
-  const filterRef       = useRef<ConversationFilter>('all');
-  const messagesEndRef  = useRef<HTMLDivElement | null>(null);
+  const activeUuidRef  = useRef<string | null>(null);
+  const filterRef      = useRef<ConversationFilter>('all');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
+  }, []);
+
+  // -------------------------------------------------------
+  // Unread counts
+  // -------------------------------------------------------
+  const loadUnreadCounts = useCallback(async () => {
+    try {
+      const counts = await agentService.getUnreadCounts();
+      setUnreadCounts(counts);
+    } catch {
+      // Silently fail — non critical
+    }
   }, []);
 
   // -------------------------------------------------------
@@ -87,10 +99,11 @@ export function useAgentDashboard() {
     setActiveConversation(conversation);
     setCustomerIsTyping(false);
 
-    // Clear unread count when conversation is opened
+    // Clear unread count locally immediately on open
     setUnreadCounts((prev) => ({ ...prev, [conversation.uuid]: 0 }));
 
     await loadMessages(conversation.uuid);
+    // loadMessages hits getMessages which marks as read on backend
   }, [loadMessages]);
 
   // -------------------------------------------------------
@@ -168,10 +181,10 @@ export function useAgentDashboard() {
             activeUuidRef.current &&
             data.conversation_uuid === activeUuidRef.current
           ) {
-            // Message belongs to active conversation — append it
+            // Active conversation — append message directly
             appendMessage(msg);
           } else if (msg.sender_type === 'customer') {
-            // Message belongs to a different conversation — increment unread
+            // Non-active conversation — increment unread count
             setUnreadCounts((prev) => ({
               ...prev,
               [data.conversation_uuid]: (prev[data.conversation_uuid] || 0) + 1,
@@ -243,6 +256,7 @@ export function useAgentDashboard() {
   // -------------------------------------------------------
   useEffect(() => {
     loadConversations('all');
+    loadUnreadCounts();
     subscribeToAgentDashboard();
 
     return () => {
