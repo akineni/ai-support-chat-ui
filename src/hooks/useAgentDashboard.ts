@@ -4,25 +4,25 @@ import { agentService } from '@/services/agentService';
 import { useToast } from '@/hooks/useToast';
 import { getEcho, disconnectEcho } from '@/lib/echo';
 
-// Module-level flag — survives React re-renders and StrictMode double calls
 let agentDashboardSubscribed = false;
 
 export function useAgentDashboard() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations]           = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [filter, setFilter] = useState<ConversationFilter>('all');
-  const [isLoadingConvs, setIsLoadingConvs] = useState(false);
-  const [isLoadingMsgs, setIsLoadingMsgs] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [isTakingOver, setIsTakingOver] = useState(false);
-  const [isReleasing, setIsReleasing] = useState(false);
-  const [customerIsTyping, setCustomerIsTyping] = useState(false);
-  const { toasts, toast, removeToast } = useToast();
+  const [messages, setMessages]                     = useState<Message[]>([]);
+  const [filter, setFilter]                         = useState<ConversationFilter>('all');
+  const [isLoadingConvs, setIsLoadingConvs]         = useState(false);
+  const [isLoadingMsgs, setIsLoadingMsgs]           = useState(false);
+  const [isSending, setIsSending]                   = useState(false);
+  const [isTakingOver, setIsTakingOver]             = useState(false);
+  const [isReleasing, setIsReleasing]               = useState(false);
+  const [customerIsTyping, setCustomerIsTyping]     = useState(false);
+  const [unreadCounts, setUnreadCounts]             = useState<Record<string, number>>({});
+  const { toasts, toast, removeToast }              = useToast();
 
-  const activeUuidRef = useRef<string | null>(null);
-  const filterRef = useRef<ConversationFilter>('all');
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const activeUuidRef   = useRef<string | null>(null);
+  const filterRef       = useRef<ConversationFilter>('all');
+  const messagesEndRef  = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -73,8 +73,8 @@ export function useAgentDashboard() {
     setMessages((prev) => {
       const exists = prev.some(
         (m) => m.created_at === message.created_at &&
-          m.sender_type === message.sender_type &&
-          m.body === message.body
+               m.sender_type === message.sender_type &&
+               m.body === message.body
       );
       if (exists) return prev;
       return [...prev, message];
@@ -86,6 +86,10 @@ export function useAgentDashboard() {
     activeUuidRef.current = conversation.uuid;
     setActiveConversation(conversation);
     setCustomerIsTyping(false);
+
+    // Clear unread count when conversation is opened
+    setUnreadCounts((prev) => ({ ...prev, [conversation.uuid]: 0 }));
+
     await loadMessages(conversation.uuid);
   }, [loadMessages]);
 
@@ -140,7 +144,7 @@ export function useAgentDashboard() {
   }, [activeConversation]);
 
   // -------------------------------------------------------
-  // Reverb — module-level guard prevents any double subscription
+  // Reverb — module-level guard
   // -------------------------------------------------------
   const subscribeToAgentDashboard = useCallback(async () => {
     if (agentDashboardSubscribed) return;
@@ -158,21 +162,26 @@ export function useAgentDashboard() {
         }) => {
           const msg = data.message;
 
-          // Always refresh conversation list sidebar
           loadConversations(filterRef.current);
 
-          // Only append if message belongs to currently open conversation
           if (
             activeUuidRef.current &&
             data.conversation_uuid === activeUuidRef.current
           ) {
+            // Message belongs to active conversation — append it
             appendMessage(msg);
+          } else if (msg.sender_type === 'customer') {
+            // Message belongs to a different conversation — increment unread
+            setUnreadCounts((prev) => ({
+              ...prev,
+              [data.conversation_uuid]: (prev[data.conversation_uuid] || 0) + 1,
+            }));
           }
         })
         .listen('.user.typing', (data: {
           conversation_uuid: string;
-          sender_type: string;
-          is_typing: boolean;
+          sender_type:       string;
+          is_typing:         boolean;
         }) => {
           if (
             data.sender_type === 'customer' &&
@@ -230,7 +239,7 @@ export function useAgentDashboard() {
   }, [scrollToBottom]);
 
   // -------------------------------------------------------
-  // Init — runs once only
+  // Init
   // -------------------------------------------------------
   useEffect(() => {
     loadConversations('all');
@@ -258,6 +267,7 @@ export function useAgentDashboard() {
     isReleasing,
     pendingCount,
     customerIsTyping,
+    unreadCounts,
     toasts,
     toast,
     removeToast,

@@ -57,6 +57,7 @@ export default function AgentPage() {
     sendReply,
     sendTyping: sendAgentTyping,
     loadMessages,
+    unreadCounts,
   } = useAgentDashboard();
 
   const {
@@ -111,6 +112,7 @@ export default function AgentPage() {
             activeUuid={activeConversation?.uuid || null}
             filter={filter}
             isLoading={isLoadingConvs}
+            unreadCounts={unreadCounts}
             onSelect={selectConversation}
             onFilterChange={changeFilter}
             pendingCount={pendingCount}

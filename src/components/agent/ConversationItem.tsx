@@ -3,6 +3,7 @@ import { Conversation } from '@/types';
 interface ConversationItemProps {
   conversation: Conversation;
   isActive:     boolean;
+  unreadCount:  number;
   onClick:      () => void;
 }
 
@@ -15,22 +16,22 @@ function formatTime(iso: string): string {
 
 const statusConfig = {
   pending_handover: {
-    label: 'Needs attention',
+    label:     'Needs attention',
     className: 'bg-[var(--amber-bg)] text-[var(--amber)]',
     dotClass:  'bg-[var(--amber)]',
   },
   open_human: {
-    label: 'Human agent',
+    label:     'Human agent',
     className: 'bg-[var(--green-bg)] text-[var(--green)]',
     dotClass:  'bg-[var(--green)]',
   },
   open_ai: {
-    label: 'AI handling',
+    label:     'AI handling',
     className: 'bg-[var(--accent-glow)] text-[var(--accent2)]',
     dotClass:  'bg-[var(--accent)]',
   },
   closed: {
-    label: 'Closed',
+    label:     'Closed',
     className: 'bg-[var(--bg4)] text-[var(--text3)]',
     dotClass:  'bg-[var(--text3)]',
   },
@@ -46,6 +47,7 @@ function getStatusConfig(conversation: Conversation) {
 export default function ConversationItem({
   conversation,
   isActive,
+  unreadCount,
   onClick,
 }: ConversationItemProps) {
   const status = getStatusConfig(conversation);
@@ -63,9 +65,22 @@ export default function ConversationItem({
         <span className="text-[13px] font-medium text-[var(--text)] truncate">
           {conversation.customer_name}
         </span>
-        <span className="text-[11px] text-[var(--text3)] flex-shrink-0 ml-2">
-          {formatTime(conversation.created_at)}
-        </span>
+
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {unreadCount > 0 && (
+            <span className="
+              min-w-[18px] h-[18px] px-1
+              rounded-full text-[10px] font-bold
+              bg-[var(--accent)] text-white
+              flex items-center justify-center
+            ">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+          <span className="text-[11px] text-[var(--text3)]">
+            {formatTime(conversation.created_at)}
+          </span>
+        </div>
       </div>
 
       <div className="text-xs text-[var(--text2)] truncate max-w-[220px] mb-1.5">

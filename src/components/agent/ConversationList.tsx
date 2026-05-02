@@ -3,13 +3,14 @@ import ConversationItem from '@/components/agent/ConversationItem';
 import FilterTabs from '@/components/agent/FilterTabs';
 
 interface ConversationListProps {
-  conversations:      Conversation[];
-  activeUuid:         string | null;
-  filter:             ConversationFilter;
-  isLoading:          boolean;
-  onSelect:           (conversation: Conversation) => void;
-  onFilterChange:     (filter: ConversationFilter) => void;
-  pendingCount:       number;
+  conversations:  Conversation[];
+  activeUuid:     string | null;
+  filter:         ConversationFilter;
+  isLoading:      boolean;
+  unreadCounts:   Record<string, number>;
+  onSelect:       (conversation: Conversation) => void;
+  onFilterChange: (filter: ConversationFilter) => void;
+  pendingCount:   number;
 }
 
 export default function ConversationList({
@@ -17,10 +18,13 @@ export default function ConversationList({
   activeUuid,
   filter,
   isLoading,
+  unreadCounts,
   onSelect,
   onFilterChange,
   pendingCount,
 }: ConversationListProps) {
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+
   return (
     <div className="
       w-[300px] flex-shrink-0 flex flex-col
@@ -42,6 +46,14 @@ export default function ConversationList({
               border border-[var(--amber)]/25
             ">
               {pendingCount} pending
+            </span>
+          )}
+          {totalUnread > 0 && (
+            <span className="
+              text-[10px] font-bold px-2 py-0.5 rounded-full
+              bg-[var(--accent)] text-white
+            ">
+              {totalUnread} new
             </span>
           )}
           <span className="
@@ -75,6 +87,7 @@ export default function ConversationList({
               key={conv.uuid}
               conversation={conv}
               isActive={activeUuid === conv.uuid}
+              unreadCount={unreadCounts[conv.uuid] || 0}
               onClick={() => onSelect(conv)}
             />
           ))
