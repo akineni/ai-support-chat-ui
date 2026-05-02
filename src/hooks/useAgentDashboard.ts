@@ -8,20 +8,20 @@ import { getEcho, disconnectEcho } from '@/lib/echo';
 let agentDashboardSubscribed = false;
 
 export function useAgentDashboard() {
-  const [conversations, setConversations]           = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages]                     = useState<Message[]>([]);
-  const [filter, setFilter]                         = useState<ConversationFilter>('all');
-  const [isLoadingConvs, setIsLoadingConvs]         = useState(false);
-  const [isLoadingMsgs, setIsLoadingMsgs]           = useState(false);
-  const [isSending, setIsSending]                   = useState(false);
-  const [isTakingOver, setIsTakingOver]             = useState(false);
-  const [isReleasing, setIsReleasing]               = useState(false);
-  const [customerIsTyping, setCustomerIsTyping]     = useState(false);
-  const { toasts, toast, removeToast }              = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [filter, setFilter] = useState<ConversationFilter>('all');
+  const [isLoadingConvs, setIsLoadingConvs] = useState(false);
+  const [isLoadingMsgs, setIsLoadingMsgs] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isTakingOver, setIsTakingOver] = useState(false);
+  const [isReleasing, setIsReleasing] = useState(false);
+  const [customerIsTyping, setCustomerIsTyping] = useState(false);
+  const { toasts, toast, removeToast } = useToast();
 
-  const activeUuidRef  = useRef<string | null>(null);
-  const filterRef      = useRef<ConversationFilter>('all');
+  const activeUuidRef = useRef<string | null>(null);
+  const filterRef = useRef<ConversationFilter>('all');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -73,8 +73,8 @@ export function useAgentDashboard() {
     setMessages((prev) => {
       const exists = prev.some(
         (m) => m.created_at === message.created_at &&
-               m.sender_type === message.sender_type &&
-               m.body === message.body
+          m.sender_type === message.sender_type &&
+          m.body === message.body
       );
       if (exists) return prev;
       return [...prev, message];
@@ -152,17 +152,27 @@ export function useAgentDashboard() {
       echo.leave('agent.dashboard');
 
       echo.channel('agent.dashboard')
-        .listen('.message.sent', (data: { message: Message & { conversation_id: number } }) => {
+        .listen('.message.sent', (data: {
+          conversation_uuid: string;
+          message: Message & { conversation_id: number };
+        }) => {
           const msg = data.message;
+
+          // Always refresh conversation list sidebar
           loadConversations(filterRef.current);
-          if (activeUuidRef.current) {
+
+          // Only append if message belongs to currently open conversation
+          if (
+            activeUuidRef.current &&
+            data.conversation_uuid === activeUuidRef.current
+          ) {
             appendMessage(msg);
           }
         })
         .listen('.user.typing', (data: {
           conversation_uuid: string;
-          sender_type:       string;
-          is_typing:         boolean;
+          sender_type: string;
+          is_typing: boolean;
         }) => {
           if (
             data.sender_type === 'customer' &&
