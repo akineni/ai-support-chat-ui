@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Conversation, Message, ConversationFilter } from '@/types';
 import { agentService } from '@/services/agentService';
 import { useToast } from '@/hooks/useToast';
-import { getEcho, disconnectEcho } from '@/lib/echo';
+import { getEcho, disconnectEcho } from '@/lib/echo.config';
 
 let agentDashboardSubscribed = false;
 

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message } from '@/types';
 import { chatService } from '@/services/chatService';
 import { useToast } from '@/hooks/useToast';
-import { getEcho, disconnectEcho } from '@/lib/echo';
+import { getEcho, disconnectEcho } from '@/lib/echo.config';
 
 const SESSION_KEYS = {
   TOKEN:      'customer_session_token',
